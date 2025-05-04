@@ -104,6 +104,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   regs.a1 = SYSMEM_INC_OP;
   regs.a2 = vmaid;
   regs.a3 = size;
+  // regs.a3 = inc_sz;
 
   /* SYSCALL 17 sys_memmap */
 
@@ -320,11 +321,11 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
     /* Play with paging theory here */
     /* First check if page is present */
-    if (PAGING_PAGE_PRESENT(pte))
-    {
-      *fpn = PAGING_PTE_FPN(pte);
-      return 0;
-    }
+    // if (PAGING_PAGE_PRESENT(pte))
+    // {
+    //   *fpn = PAGING_PTE_FPN(pte);
+    //   return 0;
+    // }
 
     /* Page fault! Need to handle swapping */
     int victim_fpn;
@@ -427,6 +428,7 @@ int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
    *  SYSCALL 17 sys_memmap with SYSMEM_IO_WRITE
    */
   int phyaddr = fpn * PAGING_PAGESZ + off;
+  // MEMPHY_write(caller->mram, phyaddr, value);
   struct sc_regs regs;
   regs.a1 = SYSMEM_IO_WRITE;
   regs.a2 = phyaddr;
@@ -436,6 +438,8 @@ int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
   syscall(caller, 17, &regs);
   // Update data
   // data = (BYTE)
+  // uint32_t *pte = &mm->pgd[pgn];
+  // SETBIT(*pte, PAGING_PTE_DIRTY_MASK);
 
   return 0;
 }
@@ -599,6 +603,7 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   {
     *retpgn = pg->pgn;
     free(pg);
+    mm->fifo_pgn = NULL;
     return 0;
   }
   struct pgn_t *prevpg = mm->fifo_pgn;
@@ -610,6 +615,11 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   *retpgn = pg->pgn;
   prevpg->pg_next = NULL;
   free(pg);
+
+
+  // *retpgn = pg->pgn;
+  // mm->fifo_pgn = pg->pg_next;
+  // free(pg);
   return 0;
 }
 
