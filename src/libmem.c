@@ -597,11 +597,11 @@ int free_pcb_memph(struct pcb_t *caller)
 int find_victim_page(struct mm_struct *mm, int *retpgn)
 {
   struct pgn_t *pg = mm->fifo_pgn;
-  if (pg == NULL){
+  if (pg == NULL)
+  {
     *retpgn = -1;
     return -1;
-  }
-;
+  };
   /* TODO: Implement the theorical mechanism to find the victim page */
   if (pg->pg_next == NULL)
   {
