@@ -231,144 +231,144 @@ int libfree(struct pcb_t *proc, uint32_t reg_index)
  *@caller: caller
  *
  */
-// int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
-// {
-//   uint32_t pte = mm->pgd[pgn];
-
-//   if (!PAGING_PAGE_PRESENT(pte))
-//   { /* Page is not online, make it actively living */
-//     int vicpgn, swpfpn;
-//     int vicfpn;
-//     uint32_t vicpte;
-
-//     int tgtfpn = PAGING_PTE_SWP(pte); // the target frame storing our variable
-
-//     /* TODO: Play with your paging theory here */
-//     /* Find victim page */
-//     find_victim_page(caller->mm, &vicpgn);
-
-//     vicpte = caller->mm->pgd[vicpgn];
-//     vicfpn = PAGING_FPN(vicpte);
-
-//     /* Get free frame in MEMSWP */
-//     MEMPHY_get_freefp(caller->active_mswp, &swpfpn);
-
-//     /* TODO: Implement swap frame from MEMRAM to MEMSWP and vice versa*/
-
-//     /* TODO copy victim frame to swap
-//      * SWP(vicfpn <--> swpfpn)
-//      * SYSCALL 17 sys_memmap
-//      * with operation SYSMEM_SWP_OP
-//      */
-//     struct sc_regs regs;
-//     regs.a1 = SYSMEM_SWP_OP;
-//     regs.a2 = vicfpn;
-//     regs.a3 = swpfpn;
-
-//     /* SYSCALL 17 sys_memmap */
-//     syscall(caller, 17, &regs);
-
-//     /* TODO copy target frame form swap to mem
-//      * SWP(tgtfpn <--> vicfpn)
-//      * SYSCALL 17 sys_memmap
-//      * with operation SYSMEM_SWP_OP
-//      */
-//     /* TODO copy target frame form swap to mem
-//     //struct sc_regs copied_regs;
-//     //regs.a1 =...
-//     //regs.a2 =...
-//     //regs.a3 =..
-//     */
-
-//     struct sc_regs copied_regs;
-//     copied_regs.a1 = SYSMEM_SWP_OP;
-//     copied_regs.a2 = tgtfpn;
-//     copied_regs.a3 = vicfpn;
-
-//     /* SYSCALL 17 sys_memmap */
-//     syscall(caller, 17, &copied_regs);
-
-//     /* Update page table */
-//     pte_set_swap(&caller->mm->pgd[vicpgn], 0, swpfpn);
-//     // mm->pgd;
-
-//     /* Update its online status of the target page */
-//     pte_set_fpn(&mm->pgd[pgn], vicfpn);
-//     // mm->pgd[pgn];
-//     // pte_set_fpn();
-
-//     enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
-//     *fpn = tgtfpn;
-//     return 0;
-//   }
-
-//   *fpn = PAGING_FPN(mm->pgd[pgn]);
-
-//   return 0;
-// }
-
 int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 {
   uint32_t pte = mm->pgd[pgn];
 
   if (!PAGING_PAGE_PRESENT(pte))
   { /* Page is not online, make it actively living */
-    //  int vicpgn, swpfpn;
-    //  int vicfpn;
-    //  uint32_t vicpte;
+    int vicpgn, swpfpn;
+    int vicfpn;
+    uint32_t vicpte;
 
-    //  int tgtfpn = PAGING_PTE_SWP(pte);//the target frame storing our variable
+    int tgtfpn = PAGING_PTE_SWP(pte); // the target frame storing our variable
 
-    /* Play with paging theory here */
-    /* First check if page is present */
-    // if (PAGING_PAGE_PRESENT(pte))
-    // {
-    //   *fpn = PAGING_PTE_FPN(pte);
-    //   return 0;
-    // }
+    /* TODO: Play with your paging theory here */
+    /* Find victim page */
+    find_victim_page(caller->mm, &vicpgn);
 
-    /* Page fault! Need to handle swapping */
-    int victim_fpn;
-    //  int swptyp = 0;  // Default swap type
+    vicpte = caller->mm->pgd[vicpgn];
+    vicfpn = PAGING_FPN(vicpte);
 
-    /* Find a victim page to swap out if needed */
-    if (find_victim_page(caller->mm, &victim_fpn) != 0)
-      return -1;
+    /* Get free frame in MEMSWP */
+    MEMPHY_get_freefp(caller->active_mswp, &swpfpn);
 
-    /* Get frame from MEMRAM or MEMSWP */
-    if (PAGING_PTE_SWAPPED_MASK & pte)
-    {
-      /* Copy victim frame to swap if needed */
-      if (victim_fpn >= 0)
-      {
-        int swap_offset = PAGING_PTE_SWPOFF_MASK & pte;
-        __mm_swap_page(caller, victim_fpn, swap_offset);
-      }
+    /* TODO: Implement swap frame from MEMRAM to MEMSWP and vice versa*/
 
-      /* Copy target frame from swap to mem */
-      int target_swpoff = PAGING_PTE_SWPOFF_MASK & pte;
-      __mm_swap_page(caller, victim_fpn, target_swpoff);
+    /* TODO copy victim frame to swap
+     * SWP(vicfpn <--> swpfpn)
+     * SYSCALL 17 sys_memmap
+     * with operation SYSMEM_SWP_OP
+     */
+    struct sc_regs regs;
+    regs.a1 = SYSMEM_SWP_OP;
+    regs.a2 = vicfpn;
+    regs.a3 = swpfpn;
 
-      /* Update PTE */
-      SETBIT(pte, PAGING_PTE_PRESENT_MASK);
-      CLRBIT(pte, PAGING_PTE_SWAPPED_MASK);
-      SETVAL(pte, victim_fpn, PAGING_PTE_FPN_MASK, 0);
+    /* SYSCALL 17 sys_memmap */
+    syscall(caller, 17, &regs);
 
-      *fpn = victim_fpn;
-    }
-    else
-    {
-      /* New page, just allocate a frame */
-      *fpn = victim_fpn;
-      SETBIT(pte, PAGING_PTE_PRESENT_MASK);
-      SETVAL(pte, victim_fpn, PAGING_PTE_FPN_MASK, 0);
-    }
+    /* TODO copy target frame form swap to mem
+     * SWP(tgtfpn <--> vicfpn)
+     * SYSCALL 17 sys_memmap
+     * with operation SYSMEM_SWP_OP
+     */
+    /* TODO copy target frame form swap to mem
+    //struct sc_regs copied_regs;
+    //regs.a1 =...
+    //regs.a2 =...
+    //regs.a3 =..
+    */
+
+    struct sc_regs copied_regs;
+    copied_regs.a1 = SYSMEM_SWP_OP;
+    copied_regs.a2 = tgtfpn;
+    copied_regs.a3 = vicfpn;
+
+    /* SYSCALL 17 sys_memmap */
+    syscall(caller, 17, &copied_regs);
+
+    /* Update page table */
+    pte_set_swap(&caller->mm->pgd[vicpgn], 0, swpfpn);
+    // mm->pgd;
+
+    /* Update its online status of the target page */
+    pte_set_fpn(&mm->pgd[pgn], vicfpn);
+    // mm->pgd[pgn];
+    // pte_set_fpn();
+
+    enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
+    *fpn = tgtfpn;
+    return 0;
   }
 
   *fpn = PAGING_FPN(mm->pgd[pgn]);
 
   return 0;
 }
+
+// int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
+// {
+//   uint32_t pte = mm->pgd[pgn];
+
+//   if (!PAGING_PAGE_PRESENT(pte))
+//   { /* Page is not online, make it actively living */
+//     //  int vicpgn, swpfpn;
+//     //  int vicfpn;
+//     //  uint32_t vicpte;
+
+//     //  int tgtfpn = PAGING_PTE_SWP(pte);//the target frame storing our variable
+
+//     /* Play with paging theory here */
+//     /* First check if page is present */
+//     // if (PAGING_PAGE_PRESENT(pte))
+//     // {
+//     //   *fpn = PAGING_PTE_FPN(pte);
+//     //   return 0;
+//     // }
+
+//     /* Page fault! Need to handle swapping */
+//     int victim_fpn;
+//     //  int swptyp = 0;  // Default swap type
+
+//     /* Find a victim page to swap out if needed */
+//     if (find_victim_page(caller->mm, &victim_fpn) != 0)
+//       return -1;
+
+//     /* Get frame from MEMRAM or MEMSWP */
+//     if (PAGING_PTE_SWAPPED_MASK & pte)
+//     {
+//       /* Copy victim frame to swap if needed */
+//       if (victim_fpn >= 0)
+//       {
+//         int swap_offset = PAGING_PTE_SWPOFF_MASK & pte;
+//         __mm_swap_page(caller, victim_fpn, swap_offset);
+//       }
+
+//       /* Copy target frame from swap to mem */
+//       int target_swpoff = PAGING_PTE_SWPOFF_MASK & pte;
+//       __mm_swap_page(caller, victim_fpn, target_swpoff);
+
+//       /* Update PTE */
+//       SETBIT(pte, PAGING_PTE_PRESENT_MASK);
+//       CLRBIT(pte, PAGING_PTE_SWAPPED_MASK);
+//       SETVAL(pte, victim_fpn, PAGING_PTE_FPN_MASK, 0);
+
+//       *fpn = victim_fpn;
+//     }
+//     else
+//     {
+//       /* New page, just allocate a frame */
+//       *fpn = victim_fpn;
+//       SETBIT(pte, PAGING_PTE_PRESENT_MASK);
+//       SETVAL(pte, victim_fpn, PAGING_PTE_FPN_MASK, 0);
+//     }
+//   }
+
+//   *fpn = PAGING_FPN(mm->pgd[pgn]);
+
+//   return 0;
+// }
 
 /*pg_getval - read value at given offset
  *@mm: memory region
@@ -481,6 +481,8 @@ int libread(
 
   /* TODO update result of reading action*/
   // destination
+  *destination = (uint32_t)data;
+
 #ifdef IODUMP
   printf("read region=%d offset=%d value=%d\n", source, offset, data);
 #ifdef PAGETBL_DUMP
@@ -595,9 +597,11 @@ int free_pcb_memph(struct pcb_t *caller)
 int find_victim_page(struct mm_struct *mm, int *retpgn)
 {
   struct pgn_t *pg = mm->fifo_pgn;
-  if (pg == NULL)
+  if (pg == NULL){
     *retpgn = -1;
-  return -1;
+    return -1;
+  }
+;
   /* TODO: Implement the theorical mechanism to find the victim page */
   if (pg->pg_next == NULL)
   {
@@ -615,7 +619,6 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   *retpgn = pg->pgn;
   prevpg->pg_next = NULL;
   free(pg);
-
 
   // *retpgn = pg->pgn;
   // mm->fifo_pgn = pg->pg_next;
