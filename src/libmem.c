@@ -307,69 +307,6 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
   return 0;
 }
 
-// int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
-// {
-//   uint32_t pte = mm->pgd[pgn];
-
-//   if (!PAGING_PAGE_PRESENT(pte))
-//   { /* Page is not online, make it actively living */
-//     //  int vicpgn, swpfpn;
-//     //  int vicfpn;
-//     //  uint32_t vicpte;
-
-//     //  int tgtfpn = PAGING_PTE_SWP(pte);//the target frame storing our variable
-
-//     /* Play with paging theory here */
-//     /* First check if page is present */
-//     // if (PAGING_PAGE_PRESENT(pte))
-//     // {
-//     //   *fpn = PAGING_PTE_FPN(pte);
-//     //   return 0;
-//     // }
-
-//     /* Page fault! Need to handle swapping */
-//     int victim_fpn;
-//     //  int swptyp = 0;  // Default swap type
-
-//     /* Find a victim page to swap out if needed */
-//     if (find_victim_page(caller->mm, &victim_fpn) != 0)
-//       return -1;
-
-//     /* Get frame from MEMRAM or MEMSWP */
-//     if (PAGING_PTE_SWAPPED_MASK & pte)
-//     {
-//       /* Copy victim frame to swap if needed */
-//       if (victim_fpn >= 0)
-//       {
-//         int swap_offset = PAGING_PTE_SWPOFF_MASK & pte;
-//         __mm_swap_page(caller, victim_fpn, swap_offset);
-//       }
-
-//       /* Copy target frame from swap to mem */
-//       int target_swpoff = PAGING_PTE_SWPOFF_MASK & pte;
-//       __mm_swap_page(caller, victim_fpn, target_swpoff);
-
-//       /* Update PTE */
-//       SETBIT(pte, PAGING_PTE_PRESENT_MASK);
-//       CLRBIT(pte, PAGING_PTE_SWAPPED_MASK);
-//       SETVAL(pte, victim_fpn, PAGING_PTE_FPN_MASK, 0);
-
-//       *fpn = victim_fpn;
-//     }
-//     else
-//     {
-//       /* New page, just allocate a frame */
-//       *fpn = victim_fpn;
-//       SETBIT(pte, PAGING_PTE_PRESENT_MASK);
-//       SETVAL(pte, victim_fpn, PAGING_PTE_FPN_MASK, 0);
-//     }
-//   }
-
-//   *fpn = PAGING_FPN(mm->pgd[pgn]);
-
-//   return 0;
-// }
-
 /*pg_getval - read value at given offset
  *@mm: memory region
  *@addr: virtual address to acess
