@@ -47,7 +47,9 @@ struct pcb_t *dequeue(struct queue_t *q)
         // return highest;
 
         if (empty(q))
+        {
                 return NULL;
+        }
         struct pcb_t *proc = q->proc[0];
         for (int i = 0; i < q->size - 1; i++)
         {
