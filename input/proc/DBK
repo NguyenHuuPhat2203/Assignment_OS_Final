@@ -1,0 +1,11 @@
+2 10
+alloc 256 15
+alloc 128 16
+free 15
+alloc 513 17
+free 17
+alloc 10 4
+free 16
+alloc 1 28
+free 0
+free 28

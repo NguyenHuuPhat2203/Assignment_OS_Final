@@ -91,7 +91,8 @@ int vmap_page_range(struct pcb_t *caller,           // process call
   struct framephy_struct *fpit = frames;
   int pgit = 0;
   int pgn = PAGING_PGN(addr);
-
+  // printf("pgn = %d\n", pgn);
+  // printf("nPage = %d", pgnum);
   /* TODO: update the rg_end and rg_start of ret_rg
   //ret_rg->rg_end =  ....
   //ret_rg->rg_start = ...
@@ -239,9 +240,12 @@ int __swap_cp_page(struct memphy_struct *mpsrc, int srcfpn,
  */
 int init_mm(struct mm_struct *mm, struct pcb_t *caller)
 {
+  // This vma0 is used when call get_vma_by_num(caller->mm, vmaid) with vmaid = 0
   struct vm_area_struct *vma0 = malloc(sizeof(struct vm_area_struct));
 
   mm->pgd = malloc(PAGING_MAX_PGN * sizeof(uint32_t));
+  // printf("%u\n", PAGING_MAX_PGN);
+  // printf("%ls\n", mm->pgd);
 
   /* By default the owner comes with at least one vma */
   vma0->vm_id = 0;

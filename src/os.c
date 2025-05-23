@@ -13,9 +13,9 @@
 // Undef MM_PAGING to run shceduler without paging
 // Def MM_PAGING to run the others
 
-#ifdef MM_PAGING
-#undef MM_PAGING
-#endif
+// #ifdef MM_PAGING
+// #undef MM_PAGING
+// #endif
 
 static int time_slot;
 static int num_cpus;
@@ -187,6 +187,7 @@ static void read_config(const char *path)
 	 */
 	memramsz = 0x100000;
 	memswpsz[0] = 0x1000000;
+	//  Virtual mem sz > Physic mem sz => Swap page
 	for (sit = 1; sit < PAGING_MAX_MMSWP; sit++)
 		memswpsz[sit] = 0;
 #else
@@ -259,12 +260,12 @@ int main(int argc, char *argv[])
 	struct memphy_struct mswp[PAGING_MAX_MMSWP];
 
 	/* Create MEM RAM */
-	init_memphy(&mram, memramsz, rdmflag);
+	init_memphy(&mram, memramsz, rdmflag); // Init physic mem
 
 	/* Create all MEM SWAP */
 	int sit;
 	for (sit = 0; sit < PAGING_MAX_MMSWP; sit++)
-		init_memphy(&mswp[sit], memswpsz[sit], rdmflag);
+		init_memphy(&mswp[sit], memswpsz[sit], rdmflag); // Init Virtual mem
 
 	/* In Paging mode, it needs passing the system mem to each PCB through loader*/
 	struct mmpaging_ld_args *mm_ld_args = malloc(sizeof(struct mmpaging_ld_args));

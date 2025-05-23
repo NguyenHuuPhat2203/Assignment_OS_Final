@@ -116,6 +116,8 @@ int MEMPHY_format(struct memphy_struct *mp, int pagesz)
 {
    /* This setting come with fixed constant PAGESZ */
    int numfp = mp->maxsz / pagesz;
+   // printf("%d\n", mp->maxsz);
+   // printf("%d\n", pagesz);
    struct framephy_struct *newfst, *fst;
    int iter = 0;
 
@@ -160,7 +162,7 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 
 int MEMPHY_dump(struct memphy_struct *mp)
 {
-   /*TODO dump memphy contnt mp->storage
+   /*TODO dump memphy content mp->storage
     *     for tracing the memory content
     */
    printf("===== PHYSICAL MEMORY DUMP =====\n");

@@ -245,13 +245,13 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
     /* TODO: Play with your paging theory here */
     /* Find victim page */
-    find_victim_page(caller->mm, &vicpgn);
+    find_victim_page(caller->mm, &vicpgn); // Swapped out page
 
     vicpte = caller->mm->pgd[vicpgn];
     vicfpn = PAGING_FPN(vicpte);
 
     /* Get free frame in MEMSWP */
-    MEMPHY_get_freefp(caller->active_mswp, &swpfpn);
+    MEMPHY_get_freefp(caller->active_mswp, &swpfpn); // Swapped in page
 
     /* TODO: Implement swap frame from MEMRAM to MEMSWP and vice versa*/
 
@@ -632,6 +632,7 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
  *@size: allocated size
  *
  */
+// vmaid == 0 => Stack
 int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_struct *newrg)
 {
   struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
